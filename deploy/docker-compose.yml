@@ -1,0 +1,59 @@
+name: akilas-archive
+
+services:
+  archive:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: akilas-archive:latest
+    container_name: akilas-archive
+    restart: unless-stopped
+    user: "1001:1001"
+    ports:
+      # Direct access on the VPS (pick any free port; 8080 is taken by your other app).
+      # Caddy talks to the container directly, so this is optional but handy for testing.
+      - "3001:3000"
+    env_file:
+      - ../.env
+    environment:
+      - DATABASE_URL=file:/app/data/akilas-archive.db
+    volumes:
+      - ../data:/app/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/meta').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 25s
+
+  # ------------------------------------------------------------------
+  # Optional reverse proxy with automatic HTTPS (Let's Encrypt).
+  # Start with:  docker compose --profile proxy up -d --build
+  #
+  # If you ALREADY run Caddy (or nginx) on the host, do NOT start this
+  # service — instead copy the site blocks from deploy/Caddyfile into
+  # your existing config and proxy to localhost:3001.
+  # ------------------------------------------------------------------
+  caddy:
+    image: caddy:2-alpine
+    container_name: akilas-caddy
+    profiles: ["proxy"]
+    restart: unless-stopped
+    depends_on:
+      - archive
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - ACME_AGREE=true
+    extra_hosts:
+      # lets the Caddyfile reach apps running on the host (e.g. your 8080 app)
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,41 @@
+# ============================================================================
+# Akila's Archive — Caddy configuration
+# ============================================================================
+#
+# Scenario A (default) — Caddy runs as a Docker container via
+#   `docker compose --profile proxy up -d --build`
+#   It automatically obtains/renews HTTPS certificates for the domains below.
+#
+# Scenario B — you already run Caddy on the HOST (e.g. for your existing
+#   webapp on :8080). In that case do NOT start the compose "proxy" profile.
+#   Copy the two site blocks below into your existing Caddyfile and change
+#   `archive:3000` to `localhost:3001`, then reload Caddy.
+#
+# ============================================================================
+
+akilasarchive.site {
+	# Terminal UI + API. Downloads never pass through here — browsers are
+	# redirected (302) to short-lived presigned URLs on Cloudflare R2.
+	reverse_proxy archive:3000
+
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; include-subdomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+}
+
+www.akilasarchive.site {
+	redir https://akilasarchive.site{uri} permanent
+}
+
+# ----------------------------------------------------------------------------
+# Optional: keep serving your existing Docker webapp (host port 8080) under a
+# subdomain. Uncomment, and add an A record `app` → your VPS IP in Namecheap.
+# ----------------------------------------------------------------------------
+# app.akilasarchive.site {
+# 	reverse_proxy host.docker.internal:8080
+# }

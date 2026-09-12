@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// A storage bucket exposed as a top-level category directory in the terminal
+model Bucket {
+  id              String      @id @default(cuid())
+  // The real bucket name in your storage account
+  name            String      @unique
+  // Directory name shown in the terminal, e.g. "movies"
+  alias           String      @unique
+  description     String?
+  // S3 credentials for this bucket
+  accessKeyId     String
+  secretAccessKey String
+  // Optional endpoint override. Defaults to https://<STORAGE_ACCOUNT_ID>.r2.cloudflarestorage.com
+  endpoint        String?
+  // Whether this bucket is visible/downloadable in the public terminal
+  served          Boolean     @default(true)
+  sortOrder       Int         @default(0)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  links           LinkToken[]
+}
+
+// Single-use download link token
+model LinkToken {
+  id         String    @id @default(cuid())
+  token      String    @unique
+  bucketId   String
+  bucket     Bucket    @relation(fields: [bucketId], references: [id], onDelete: Cascade)
+  // R2 object key
+  key        String
+  fileName   String
+  fileSize   BigInt?
+  createdAt  DateTime  @default(now())
+  // Link stops working after this moment even if never redeemed
+  expiresAt  DateTime
+  redeemedAt DateTime?
+  redeemedIp String?
+  revoked    Boolean   @default(false)
+
+  @@index([createdAt])
+}
+
+// Simple key/value store for runtime settings
+model Setting {
+  key   String @id
+  value String
+}

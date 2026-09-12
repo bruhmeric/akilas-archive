@@ -1,0 +1,21 @@
+# build context exclusions (context = repo root, see deploy/docker-compose.yml)
+node_modules
+.next
+.git
+data
+db
+*.db
+*.db-journal
+.env
+dev.log
+server.log
+download
+upload
+tests
+examples
+mini-services
+skills
+.zscripts
+agent-ctx
+Dockerfile
+Caddyfile
