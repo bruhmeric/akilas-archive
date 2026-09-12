@@ -243,7 +243,7 @@ search scan limit per bucket (default 20 000), MOTD.
 |--------|---------|-------|
 | 8080   | your existing Docker webapp | untouched |
 | 3001   | akilas-archive (host mapping) | change in `deploy/docker-compose.yml` if you prefer another |
-| 80/443 | bundled Caddy | only with the `proxy` profile (`--with-caddy`) |
+| 80/443 | bundled Caddy | only with `--with-caddy` (adds `docker-compose.caddy.yml` overlay) |
 
 If your 8080 app should also get a domain, uncomment the
 `app.akilasarchive.site` block in `deploy/Caddyfile` and add the DNS record.
@@ -294,6 +294,8 @@ bun scripts/search-selftest.ts      # search engine unit checks
 | Download link says **410** | Expected after first use or expiry — generate a new one |
 | `find` says *truncated* | Raise **search scan limit** in Settings, or refine the query |
 | Port 3001 already in use | Change the host mapping in `deploy/docker-compose.yml`, then update your Caddyfile target |
+| `unknown flag: --profile` | You are on an old compose — fixed in v1.1+ of this repo: the script no longer uses `--profile`. Run `git pull` and re-run `deploy.sh` |
+| `docker: 'compose' is not a docker command` | Install the compose plugin: `apt-get install -y docker-compose-plugin` |
 
 ---
 
@@ -311,7 +313,8 @@ bun scripts/search-selftest.ts      # search engine unit checks
 ├── prisma/schema.prisma      # Bucket / LinkToken / Setting models (SQLite)
 ├── deploy/
 │   ├── Dockerfile            # multi-stage, non-root, standalone build
-│   ├── docker-compose.yml    # app (:3001) + optional Caddy (proxy profile)
+│   ├── docker-compose.yml    # app (:3001) — base compose file
+│   ├── docker-compose.caddy.yml # optional Caddy overlay (used by --with-caddy)
 │   ├── Caddyfile             # akilasarchive.site + www redirect
 │   ├── deploy.sh             # git-pull friendly deploy/update script
 │   └── .env.example          # configuration template

@@ -1,4 +1,14 @@
-name: akilas-archive
+# ============================================================================
+# Akila's Archive — base compose file (app only)
+#
+# Started by deploy/deploy.sh. The optional Caddy reverse proxy lives in
+# docker-compose.caddy.yml (an overlay file), so this works with every
+# compose version — no `--profile` flag needed:
+#
+#   app only:   docker compose -p akilas-archive -f deploy/docker-compose.yml up -d --build
+#   app+caddy:  docker compose -p akilas-archive -f deploy/docker-compose.yml \
+#                             -f deploy/docker-compose.caddy.yml up -d --build
+# ============================================================================
 
 services:
   archive:
@@ -25,35 +35,3 @@ services:
       timeout: 5s
       retries: 3
       start_period: 25s
-
-  # ------------------------------------------------------------------
-  # Optional reverse proxy with automatic HTTPS (Let's Encrypt).
-  # Start with:  docker compose --profile proxy up -d --build
-  #
-  # If you ALREADY run Caddy (or nginx) on the host, do NOT start this
-  # service — instead copy the site blocks from deploy/Caddyfile into
-  # your existing config and proxy to localhost:3001.
-  # ------------------------------------------------------------------
-  caddy:
-    image: caddy:2-alpine
-    container_name: akilas-caddy
-    profiles: ["proxy"]
-    restart: unless-stopped
-    depends_on:
-      - archive
-    ports:
-      - "80:80"
-      - "443:443"
-    environment:
-      - ACME_AGREE=true
-    extra_hosts:
-      # lets the Caddyfile reach apps running on the host (e.g. your 8080 app)
-      - "host.docker.internal:host-gateway"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-
-volumes:
-  caddy_data:
-  caddy_config:

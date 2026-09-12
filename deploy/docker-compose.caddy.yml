@@ -1,0 +1,43 @@
+# ============================================================================
+# Akila's Archive — optional Caddy overlay (automatic HTTPS reverse proxy)
+#
+# NOT started by default. deploy.sh adds this file when you pass --with-caddy:
+#
+#   bash deploy/deploy.sh --with-caddy
+#
+# Manual equivalent:
+#   docker compose -p akilas-archive -f deploy/docker-compose.yml \
+#                  -f deploy/docker-compose.caddy.yml up -d --build
+#
+# If you ALREADY run Caddy (or nginx) on the host, do NOT start this
+# service — instead copy the site blocks from deploy/Caddyfile into
+# your existing config and proxy to localhost:3001.
+#
+# NOTE: the `extra_hosts` host-gateway mapping needs Docker Engine 20.10+.
+# On older engines remove that line and the commented host-proxy site in
+# deploy/Caddyfile (the main akilasarchive.site site does not need it).
+# ============================================================================
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: akilas-caddy
+    restart: unless-stopped
+    depends_on:
+      - archive
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - ACME_AGREE=true
+    extra_hosts:
+      # lets the Caddyfile reach apps running on the host (e.g. your 8080 app)
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:
